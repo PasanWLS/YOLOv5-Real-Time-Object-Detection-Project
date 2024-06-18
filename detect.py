@@ -34,6 +34,7 @@ import os
 import platform
 import sys
 from pathlib import Path
+import numpy as np
 
 import torch
 
@@ -127,6 +128,10 @@ def run(
     else:
         dataset = LoadImages(source, img_size=imgsz, stride=stride, auto=pt, vid_stride=vid_stride)
     vid_path, vid_writer = [None] * bs, [None] * bs
+    
+# --------------------------- Car Counting --------------------------------
+    carCount = 0
+# -------------------------------------------------------------------------
 
     # Run inference
     model.warmup(imgsz=(1 if pt or model.triton else bs, 3, *imgsz))  # warmup
@@ -218,10 +223,26 @@ def run(
                     if save_img or save_crop or view_img:  # Add bbox to image
                         c = int(cls)  # integer class
                         label = None if hide_labels else (names[c] if hide_conf else f"{names[c]} {conf:.2f}")
+                        
+                        #-------------------------------Print Label -----------------------------------
+                        print("Label -",label)
+                        
+                        if "car" in label:
+                            carCount = carCount + 1
+                        #------------------------------------------------------------------------------
+                        
                         annotator.box_label(xyxy, label, color=colors(c, True))
                     if save_crop:
                         save_one_box(xyxy, imc, file=save_dir / "crops" / names[c] / f"{p.stem}.jpg", BGR=True)
+                        
+#-------------------------------Show Label -----------------------------------
 
+                showCountLabel(im0, "Car Count:" + str(carCount), (20,50),(255,0,0))
+                
+            carCount = 0
+
+ #------------------------------------------------------------------------------
+ 
             # Stream results
             im0 = annotator.result()
             if view_img:
@@ -300,6 +321,15 @@ def parse_opt():
     print_args(vars(opt))
     return opt
 
+# --------------------------- Car Counting --------------------------------
+
+def showCountLabel(img, text, pos, bg_color):
+    font_face = cv2.FONT_HERSHEY_SIMPLEX
+    scale = 2
+    color = (0,0,0)
+    cv2.putText(img,text,pos,font_face,scale,color,3,cv2.LINE_AA)
+
+# -------------------------------------------------------------------------
 
 def main(opt):
     """Executes YOLOv5 model inference with given options, checking requirements before running the model."""
