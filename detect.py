@@ -131,8 +131,20 @@ def run(
     
 # --------------------------- Car Counting --------------------------------
     carCount = 0
+# -----------------------------** Region of Interest ** --------------------------------------------
+    right_box_coord = np.array(
+        [
+            [800,50],[800,200],[1000,200],[1000,50]
+        ],np.int32
+    )
+    
+    right_box_coord = right_box_coord.reshape((-1,1,2))
+    isClosed = True
+    right_box_color = (255,0,0)
+    right_box_thickness = 2
+    
 # -------------------------------------------------------------------------
-
+    
     # Run inference
     model.warmup(imgsz=(1 if pt or model.triton else bs, 3, *imgsz))  # warmup
     seen, windows, dt = 0, [], (Profile(device=device), Profile(device=device), Profile(device=device))
@@ -242,7 +254,12 @@ def run(
             carCount = 0
 
  #------------------------------------------------------------------------------
+ # -----------------------------** Region of Interest ** --------------------------------------------
  
+            cv2.polylines(im0,[right_box_coord],isClosed,right_box_color,right_box_thickness)
+            
+#------------------------------------------------------------------------------
+            
             # Stream results
             im0 = annotator.result()
             if view_img:
